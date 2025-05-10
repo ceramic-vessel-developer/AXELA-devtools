@@ -1,4 +1,11 @@
+import enum
 from abc import ABC, abstractmethod
+
+class LoopTypes(enum):
+    NONE = "NONE"
+    ONE_SONG = "ONE_SONG"
+    PLAYLIST = "PLAYLIST"
+
 
 class Player(ABC):
 
@@ -38,7 +45,6 @@ class Player(ABC):
     def play(self):
         pass
 
-    # TODO change string to enum
     @abstractmethod
-    def loop(self, loop_type: str):
+    def loop(self, loop_type: LoopTypes):
         pass
