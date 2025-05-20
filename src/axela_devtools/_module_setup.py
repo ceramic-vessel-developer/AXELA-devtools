@@ -92,11 +92,11 @@ def create_structure(data):
     (project_dir / "scripts").mkdir(exist_ok=True)
 
     try:
-        abstract_module = importlib.import_module(f"axela_devtools.{data["class_name"]}")
+        abstract_module = importlib.import_module(f"axela_devtools.{data['class_name']}")
     except ModuleNotFoundError:
         # Fallback: use relative path if running from source
-        source_path = Path(__file__).parent.parent / "axela_devtools" / f"{data["class_name"]}.py"
-        spec = importlib.util.spec_from_file_location(f"axela_devtools.{data["class_name"]}", str(source_path))
+        source_path = Path(__file__).parent.parent / "axela_devtools" / f"{data['class_name']}.py"
+        spec = importlib.util.spec_from_file_location(f"axela_devtools.{data['class_name']}", str(source_path))
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
         abstract_module = module

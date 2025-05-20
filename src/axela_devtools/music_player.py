@@ -1,7 +1,7 @@
-import enum
+from enum import Enum
 from abc import ABC, abstractmethod
 
-class LoopTypes(enum):
+class LoopTypes(Enum):
     NONE = "NONE"
     ONE_SONG = "ONE_SONG"
     PLAYLIST = "PLAYLIST"
