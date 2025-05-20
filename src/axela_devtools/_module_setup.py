@@ -153,7 +153,9 @@ setup(
 
     print(f"✅ Project '{data['name']}' has been created successfully!")
 
-
-if __name__ == "__main__":
+def _cli():
     user_data = prompt_user()
     create_structure(user_data)
+
+if __name__ == "__main__":
+    _cli()

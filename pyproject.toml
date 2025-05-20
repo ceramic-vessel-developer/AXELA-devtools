@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools >= 77.0.3"]
+build-backend = "setuptools.build_meta"
+[project]
+name = "axela-devtools"
+version = "0.0.2"
+authors = [
+  { name="Kacper Góral", email="kacper.goral1202@gmail.com" },
+]
+description = "AXELA devtools package"
+readme = "README.md"
+requires-python = ">=3.11"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+license = "MIT"
+license-files = ["LICEN[CS]E*"]
+
+[project.urls]
+Homepage = "https://github.com/ceramic-vessel-developer/AXELA-devtools"
+Issues = "https://github.com/ceramic-vessel-developer/AXELA-devtools/issues"

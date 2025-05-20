@@ -13,7 +13,7 @@ REQUIRED_FILES = ["main.py", "metadata.json", "README.md", "requirements.txt", "
 REQUIRED_DIRS = ["scripts"]
 
 
-def check_main_file(path):
+def _check_main_file(path):
     try:
         with open(path / "main.py", "r") as f:
             tree = ast.parse(f.read())
@@ -25,7 +25,7 @@ def check_main_file(path):
         return False, f"Error parsing main.py: {e}"
 
 
-def check_metadata_file(path):
+def _check_metadata_file(path):
     try:
         with open(path / "metadata.json", "r") as f:
             data = json.load(f)
@@ -45,7 +45,7 @@ def check_metadata_file(path):
         return False, f"Error reading metadata.json: {e}"
 
 
-def check_structure(project_path):
+def _check_structure(project_path):
     errors = []
 
     for file in REQUIRED_FILES:
@@ -56,24 +56,24 @@ def check_structure(project_path):
         if not (project_path / directory).exists():
             errors.append(f"Missing required directory: {directory}")
 
-    is_main_valid, msg = check_main_file(project_path)
+    is_main_valid, msg = _check_main_file(project_path)
     if not is_main_valid:
         errors.append(msg)
 
-    is_meta_valid, msg = check_metadata_file(project_path)
+    is_meta_valid, msg = _check_metadata_file(project_path)
     if not is_meta_valid:
         errors.append(msg)
 
     return errors
 
 
-def main(project_path):
-    errors = check_structure(project_path)
+def check(project_path):
+    errors = _check_structure(project_path)
     return errors
 
 
 
-def cli():
+def _cli():
     project_name = input("Enter the path to the addon project: ").strip()
     project_path = Path(project_name)
 
@@ -81,7 +81,7 @@ def cli():
         print("❌ Provided path does not exist or is not a directory.")
         return
 
-    errors = main(project_path)
+    errors = check(project_path)
 
     if errors:
         print("❌ Project check failed with the following issues:")
@@ -92,4 +92,4 @@ def cli():
 
 
 if __name__ == "__main__":
-    cli()
+    _cli()
