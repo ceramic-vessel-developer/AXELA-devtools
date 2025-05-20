@@ -68,6 +68,7 @@ def _check_structure(project_path):
 
 
 def check(project_path):
+    project_path = Path(project_path)
     errors = _check_structure(project_path)
     return errors
 
