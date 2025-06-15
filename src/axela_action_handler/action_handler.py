@@ -4,12 +4,15 @@ from pathlib import Path
 from datetime import date
 import threading
 import time
+import sounddevice as sd
+import soundfile as sf
 import keyboard
 
 from axela_devtools.music_player import LoopTypes
 from axela_devtools.notes import Note
 import tts
 import speech_to_text
+
 
 class AxelaActionHandler:
 
@@ -19,6 +22,7 @@ class AxelaActionHandler:
         self.calendar_module = self.load_module(modules['calendar_path'], 'calendar_module')
         self.notes_module = self.load_module(modules['notes_path'], 'notes_module')
         self.current_command = "Axela volume up by 80"
+        self.device_microphone = None
         self._stop_event = threading.Event()
         self._listener_thread = threading.Thread(target=self._background_listener, daemon=True)
         self._listener_thread.start()
@@ -237,10 +241,11 @@ class AxelaActionHandler:
             self.current_command = speech_to_text.speech_to_text(".\\command.wav")
 
     def _background_listener(self):
+        not_ready_flag = True
         while not self._stop_event.is_set():
-            if keyboard.is_pressed('space'):
-                self.receive_command()
-                time.sleep(0.5)
+            if not_ready_flag and not keyboard.is_pressed("enter"):
+                not_ready_flag = False
+                threading.Thread(target=self._space_record_listener, daemon=True).start()
             if self.current_command != "":
                 print(f"\n[Thread] Received command: {self.current_command}")
                 result = self.search_keyword(self.current_command)
@@ -248,7 +253,40 @@ class AxelaActionHandler:
                 tts.tts(result, 'en', 'response')
             time.sleep(0.25)
 
+    def _space_record_listener(self):
+        print("[RecordingListener] recording key listener started.")
+        self.device_microphone = sd.default.device[0]  # przypisanie domyślnego mikrofonu
+        samplerate = 44100
+        channels = 1
+        recording = []
+        is_recording = False
+        stream = None
 
+        while not self._stop_event.is_set():
+            if keyboard.is_pressed("space") and not is_recording:
+                print("[RecordingListener] Space pressed - start recording")
+                recording = []
+                is_recording = True
+                stream = sd.InputStream(
+                    samplerate=samplerate,
+                    channels=channels,
+                    callback=lambda indata, frames, time_info, status: recording.extend(indata.copy())
+                )
+                stream.start()
+
+            elif not keyboard.is_pressed("space") and is_recording:
+                print("[RecordingListener] Space released - stop recording.")
+                stream.stop()
+                stream.close()
+                is_recording = False
+
+                file_path = "command.wav"
+                sf.write(file_path, recording, samplerate)
+                print(f"[Listener] Audio saved to {file_path}")
+
+                self.receive_command()
+
+            time.sleep(0.05)
 
     def handle_monitoring(self, keyphrase: str, content: str):
         print(f"Monitoring - Keyphrase: '{keyphrase}', Content: '{content}'")
