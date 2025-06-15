@@ -1,12 +1,15 @@
 import importlib.util
 import os
 from pathlib import Path
-from dataclasses import dataclass
 from datetime import date
+import threading
+import time
+import keyboard
 
 from axela_devtools.music_player import LoopTypes
 from axela_devtools.notes import Note
-
+import tts
+import speech_to_text
 
 class AxelaActionHandler:
 
@@ -15,9 +18,14 @@ class AxelaActionHandler:
         self.monitoring_module = self.load_module(modules['monitoring_path'], 'monitoring_module')
         self.calendar_module = self.load_module(modules['calendar_path'], 'calendar_module')
         self.notes_module = self.load_module(modules['notes_path'], 'notes_module')
+        self.current_command = "Axela volume up by 80"
+        self._stop_event = threading.Event()
+        self._listener_thread = threading.Thread(target=self._background_listener, daemon=True)
+        self._listener_thread.start()
 
         self.note_key_phrases = {
-            "search note": 2, "search note by name": 4, "search note by date": 4, "search note by category": 4, "create note": 2, "delete note": 2, "extend note": 2, "overwrite note": 2
+            "search note": 2, "search note by name": 4, "search note by date": 4, "search note by category": 4,
+            "create note": 2, "delete note": 2, "extend note": 2, "overwrite note": 2
         }
         self.music_key_phrases = {
             "configure hardware": 2, "play song": 2, "play playlist": 2, "volume up": 2, "volume down": 2,
@@ -27,13 +35,12 @@ class AxelaActionHandler:
             "check darkness level": 3, "check camera status": 3, "check outdoor": 2
         }
         self.calendar_key_phrases = {
-            "get current date and time": 5, "add to calendar": 3, "edit event": 2, "delete event": 2, "count time to event": 4,
+            "get current date and time": 5, "add to calendar": 3, "edit event": 2, "delete event": 2,
+            "count time to event": 4,
             "set alarm": 2, "delete alarm": 2, "week summary": 2, "day summary": 2
         }
 
-
     def load_module(self, module_path, module_name):
-        print(f"loading module from: {module_path}")
 
         if not os.path.exists(module_path):
             raise FileNotFoundError(f"Module path '{module_path}' not found.")
@@ -60,7 +67,7 @@ class AxelaActionHandler:
 
         lowered_text = text.lower()
         if "axela" not in lowered_text:
-            return
+            return "Please try again"
 
         words = lowered_text.split()
         try:
@@ -79,11 +86,10 @@ class AxelaActionHandler:
                     phrase_words = phrase.split()
                     if after_axela[:word_count] == phrase_words:
                         remaining_text = ' '.join(after_axela[word_count:])
-                        self.keyword_handler(category, phrase, remaining_text)
-                        return
+                        return self.keyword_handler(category, phrase, remaining_text)
 
         except ValueError:
-            pass
+            return "Please try again"
 
     def keyword_handler(self, category: str, keyphrase: str, content: str):
         keyphrase = keyphrase.replace(" ", "_")
@@ -92,13 +98,15 @@ class AxelaActionHandler:
         print(f"Command content: {content}")
 
         if category == "notes":
-            self.handle_notes(keyphrase, content)
+            return self.handle_notes(keyphrase, content)
         elif category == "music":
-            self.handle_music(keyphrase, content)
+            return self.handle_music(keyphrase, content)
         elif category == "monitoring":
-            self.handle_monitoring(keyphrase, content)
+            return self.handle_monitoring(keyphrase, content)
         elif category == "calendar":
-            self.handle_calendar(keyphrase, content)
+            return self.handle_calendar(keyphrase, content)
+        else:
+            return "Please try again"
 
     def handle_notes(self, keyphrase: str, content: str):
         print(f"Notes - Keyphrase: '{keyphrase}', Content: '{content}'")
@@ -170,6 +178,7 @@ class AxelaActionHandler:
             function_to_perform()
 
     def handle_music(self, keyphrase: str, content: str):
+        print(f"Music - Keyphrase: '{keyphrase}', Content: '{content}'")
         func = getattr(self.music_player_module, keyphrase)
 
         def configure_hardware():
@@ -222,6 +231,24 @@ class AxelaActionHandler:
         if keyphrase in function_map:
             function_to_perform = function_map.get(keyphrase)
             function_to_perform()
+
+    def receive_command(self):
+        if self.current_command == "":
+            self.current_command = speech_to_text.speech_to_text(".\\command.wav")
+
+    def _background_listener(self):
+        while not self._stop_event.is_set():
+            if keyboard.is_pressed('space'):
+                self.receive_command()
+                time.sleep(0.5)
+            if self.current_command != "":
+                print(f"\n[Thread] Received command: {self.current_command}")
+                result = self.search_keyword(self.current_command)
+                self.current_command = ""
+                tts.tts(result, 'en', 'response')
+            time.sleep(0.25)
+
+
 
     def handle_monitoring(self, keyphrase: str, content: str):
         print(f"Monitoring - Keyphrase: '{keyphrase}', Content: '{content}'")
@@ -304,7 +331,7 @@ modules_paths = {
     'notes_path': str(parent_dir / "axela_devtools" / "notes_dummy.py"),
 }
 
-
 testing = AxelaActionHandler(modules_paths)
-testing.search_keyword("czy coś tu będzie axela volume up by 80")
-testing.search_keyword("czy coś tu będzie axela loop song")
+
+while True:
+    pass

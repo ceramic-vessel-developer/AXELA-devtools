@@ -1,6 +1,8 @@
 from enum import Enum
 from abc import ABC, abstractmethod
 
+CLASS_NAME = "Player"
+
 class LoopTypes(Enum):
     NONE = "NONE"
     ONE_SONG = "ONE_SONG"
